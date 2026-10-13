@@ -1,16 +1,16 @@
-import { MessagesSquareIcon, RotateCwIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
+import { MessagesSquareIcon, RotateCwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sessionLabel } from "@/lib/chatHistory";
+import { groupSessions, sessionLabel } from "@/lib/chatHistory";
 import { cn } from "@/lib/utils";
 import type { ChatSession } from "@/types";
 
 /**
  * Conversation history for a notebook.
  *
- * Sits above the sources list and reads as navigation rather than content: a
- * label with a count, a single "New chat" action, then one compact row per
- * conversation. The list is capped and scrolls internally so a long history
- * cannot push the sources list — and the composer — out of the sidebar.
+ * Chats are the sidebar's primary navigation, so this section takes the
+ * flexible space and the sources list below it is the part that gives way.
+ * Order of importance: the one action that matters most, a filter, then
+ * conversations bucketed by recency so a long history stays scannable.
  *
  * Labels are the chat's first question when known and its date otherwise; see
  * `sessionLabel`. `Chat` has no title column, which is why that fallback
@@ -23,6 +23,8 @@ export function ChatHistoryList({
   isCreating,
   error,
   deletingChatId,
+  query,
+  onQueryChange,
   onSelect,
   onNewChat,
   onDelete,
@@ -35,46 +37,84 @@ export function ChatHistoryList({
   /** Set when the list or an action failed. */
   error?: string | null;
   deletingChatId: number | null;
+  /** Current filter text; empty means show everything. */
+  query: string;
+  onQueryChange: (value: string) => void;
   onSelect: (chatId: number) => void;
   onNewChat: () => void;
   onDelete: (chatId: number) => void;
   /** Retries a failed list load. */
   onRetry: () => void;
 }) {
+  const trimmed = query.trim();
+
+  const visible = trimmed
+    ? chats.filter((chat) =>
+        sessionLabel(chat).toLowerCase().includes(trimmed.toLowerCase()),
+      )
+    : chats;
+
+  // Grouping is derived during render: no effect, and it cannot drift out of
+  // sync with whatever the filter produced above.
+  const groups = groupSessions(visible);
+
   return (
-    <section aria-label="Conversations" className="flex shrink-0 flex-col">
-      <div className="flex h-10 shrink-0 items-center gap-2 px-3">
+    <section aria-label="Conversations" className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 px-3 pt-3 pb-2">
+        <button
+          type="button"
+          onClick={onNewChat}
+          disabled={isCreating}
+          className={cn(
+            "flex h-9 w-full items-center justify-center gap-2 rounded-lg",
+            "bg-accent text-[0.8125rem] font-medium text-white",
+            "transition-colors hover:bg-accent-hover",
+            "focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:outline-none",
+            "disabled:pointer-events-none disabled:opacity-60",
+          )}
+        >
+          {isCreating ? (
+            <Spinner />
+          ) : (
+            <SquarePenIcon className="size-4" />
+          )}
+          New chat
+        </button>
+
+        <div className="relative mt-2">
+          <SearchIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-tertiary"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search chats"
+            aria-label="Search chats"
+            className={cn(
+              "h-8 w-full rounded-lg border border-line bg-surface pr-2 pl-8",
+              "text-[0.8125rem] text-ink placeholder:text-ink-tertiary",
+              "transition-colors outline-none hover:border-line-strong",
+              "focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25",
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="flex h-7 shrink-0 items-center gap-2 px-3">
         <h2 className="text-[0.8125rem] font-semibold tracking-[0.01em] text-ink">
           Chats
         </h2>
 
         {!isLoading ? (
           <span className="text-[0.75rem] tabular-nums text-ink-tertiary">
-            {chats.length}
+            {trimmed ? visible.length : chats.length}
           </span>
         ) : null}
-
-        <button
-          type="button"
-          onClick={onNewChat}
-          disabled={isCreating}
-          aria-label="New chat"
-          className={cn(
-            "ml-auto flex size-7 items-center justify-center rounded-md text-ink-tertiary",
-            "transition-colors hover:bg-surface hover:text-ink",
-            "focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:outline-none",
-            "disabled:pointer-events-none disabled:opacity-50",
-          )}
-        >
-          {isCreating ? (
-            <Spinner />
-          ) : (
-            <SquarePenIcon className="size-3.5" />
-          )}
-        </button>
       </div>
 
-      <div className="max-h-40 min-h-0 overflow-y-auto overscroll-contain scroll-subtle px-2 pb-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-subtle px-2 pb-2">
         {/*
           The failure is surfaced here rather than as a toast: this panel is
           where the user is looking, and the recovery — "New chat" — sits in
@@ -104,19 +144,30 @@ export function ChatHistoryList({
           <p className="px-2 py-1.5 text-[0.75rem] text-ink-tertiary">
             No conversations yet.
           </p>
+        ) : groups.length === 0 ? (
+          <p className="px-2 py-1.5 text-[0.75rem] text-ink-tertiary">
+            No conversations match &ldquo;{trimmed}&rdquo;.
+          </p>
         ) : (
-          <ul className="space-y-0.5">
-            {chats.map((chat) => (
-              <ChatRow
-                key={chat.id}
-                chat={chat}
-                active={chat.id === activeChatId}
-                isDeleting={chat.id === deletingChatId}
-                onSelect={onSelect}
-                onDelete={onDelete}
-              />
-            ))}
-          </ul>
+          groups.map((group) => (
+            <div key={group.key} className="mb-1">
+              <h3 className="px-2 pt-2 pb-1 text-[0.6875rem] font-medium tracking-[0.04em] text-ink-tertiary uppercase">
+                {group.label}
+              </h3>
+              <ul className="space-y-0.5">
+                {group.sessions.map((chat) => (
+                  <ChatRow
+                    key={chat.id}
+                    chat={chat}
+                    active={chat.id === activeChatId}
+                    isDeleting={chat.id === deletingChatId}
+                    onSelect={onSelect}
+                    onDelete={onDelete}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))
         )}
       </div>
     </section>
