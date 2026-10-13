@@ -1,0 +1,468 @@
+/* Fonts first: CSS requires @import to precede all other rules. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Design tokens — "Mindora" (Flowstep)
+
+   A clean, cool research-product surface system:
+     · canvas   cool near-white / deep charcoal
+     · surface  white cards on that canvas
+     · accent   Mindora blue, the only chromatic colour
+     · ink      near-black navy headings, slate body
+
+   Raw tokens are prefixed `--nb-*` so they can never collide with Tailwind's
+   own `--font-*`, `--radius-*` and `--shadow-*` theme namespaces. Mapping a
+   token onto itself (`--radius-lg: var(--radius-lg)`) produces an invalid
+   self-reference that silently drops the value.
+   ========================================================================== */
+
+:root {
+  /* Typography */
+  --nb-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
+  --nb-font-display: 'Instrument Serif', 'Iowan Old Style', 'Palatino Linotype',
+    Georgia, serif;
+  --nb-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas,
+    monospace;
+
+  /* Radius system */
+  --nb-radius-xs: 4px;
+  --nb-radius-sm: 6px;
+  --nb-radius-md: 8px;
+  --nb-radius-lg: 12px;
+  --nb-radius-xl: 16px;
+
+  /* Surfaces — a neutral zinc ramp, deliberately free of blue tint */
+  --nb-canvas: #ffffff;
+  --nb-surface: #ffffff;
+  --nb-sunken: #f7f7f8;
+  /* Raised chip: skeletons, icon tiles, inset controls.
+     Exposed to Tailwind as `bg-accent-ui` (see the shadcn contract below). */
+  --nb-elevated: #eceded;
+  --nb-tinted: #f4f4f5;
+
+  /* Ink */
+  --nb-ink: #0a0a0a;
+  --nb-ink-secondary: #52525b;
+  --nb-ink-tertiary: #71717a;
+
+  /* Borders */
+  --nb-line: #e4e4e7;
+  --nb-line-strong: #d4d4d8;
+
+  /* Mindora blue — the only chromatic colour in the system */
+  --nb-accent: #2563eb;
+  --nb-accent-hover: #1d4ed8;
+  --nb-accent-fg: #ffffff;
+  --nb-accent-soft: #eff4ff;
+  --nb-accent-border: #c3d5fb;
+
+  /* Semantic */
+  --nb-success: #0f9d6e;
+  --nb-warning: #d97706;
+  --nb-danger: #dc2626;
+
+  /*
+     Focus and selection.
+
+     Both are deliberately low-key. The focus ring carries enough accent to
+     read as "this is where your keyboard is" without the heavy blue halo a
+     browser default or a 2px solid accent outline produces.
+  */
+  --nb-focus-ring: rgb(37 99 235 / 0.38);
+  --nb-focus-ring-offset: 2px;
+  --nb-selection-bg: #dbe7ff;
+  --nb-selection-fg: #0a0a0a;
+
+  /* Elevation — restrained, neutral (no navy in the shadow) */
+  --nb-shadow-subtle: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --nb-shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.05),
+    0 4px 12px -2px rgb(0 0 0 / 0.06);
+  --nb-shadow-overlay: 0 8px 24px -6px rgb(0 0 0 / 0.10),
+    0 24px 48px -12px rgb(0 0 0 / 0.12);
+
+  /* Motion — one scale, so every transition feels like the same product */
+  --nb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --nb-duration-fast: 120ms;
+  --nb-duration: 180ms;
+  --nb-duration-slow: 260ms;
+}
+
+.dark {
+  /*
+     AMOLED black.
+
+     Surfaces step up in small, even neutral increments from pure black, so
+     hierarchy stays legible without ever reading as navy. Every value below
+     has R == G == B; the only chromatic tokens are `--nb-accent-*`.
+  */
+  --nb-canvas: #000000;
+  --nb-sunken: #0a0a0a;
+  --nb-surface: #111111;
+  /* Skeletons and inset chips. Must stay clearly lighter than
+     `--nb-surface`, or loading placeholders disappear into the card. */
+  --nb-elevated: #262626;
+  --nb-tinted: #161616;
+
+  --nb-ink: #f5f5f5;
+  --nb-ink-secondary: #a1a1aa;
+  --nb-ink-tertiary: #71717a;
+
+  --nb-line: #262626;
+  --nb-line-strong: #3d3d3d;
+
+  --nb-accent: #3b82f6;
+  --nb-accent-hover: #60a5fa;
+  --nb-accent-fg: #0a0a0a;
+  /* Barely cool. Enough to associate a chip with the accent, far too little
+     for a screen of them to read as a blue-tinted background. */
+  --nb-accent-soft: #14161a;
+  --nb-accent-border: #223044;
+
+  --nb-success: #34d399;
+  --nb-warning: #fbbf24;
+  --nb-danger: #f87171;
+
+  --nb-shadow-subtle: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --nb-shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.35),
+    0 4px 12px -2px rgb(0 0 0 / 0.4);
+  --nb-shadow-overlay: 0 8px 24px -6px rgb(0 0 0 / 0.5),
+    0 24px 48px -12px rgb(0 0 0 / 0.55);
+
+  /*
+     Selection needs to be obvious against pure black. A dark blue fill
+     disappears into an AMOLED background, so dark mode uses a lightened
+     accent instead and keeps the text white.
+  */
+  --nb-focus-ring: rgb(96 165 250 / 0.45);
+  --nb-selection-bg: #1d4ed8;
+  --nb-selection-fg: #ffffff;
+}
+
+@theme inline {
+  /* Fonts map into Tailwind's font-* namespace */
+  --font-sans: var(--nb-font-sans);
+  --font-display: var(--nb-font-display);
+  --font-mono: var(--nb-font-mono);
+
+  /* Radius maps into Tailwind's rounded-* namespace */
+  --radius-xs: var(--nb-radius-xs);
+  --radius-sm: var(--nb-radius-sm);
+  --radius-md: var(--nb-radius-md);
+  --radius-lg: var(--nb-radius-lg);
+  --radius-xl: var(--nb-radius-xl);
+
+  /* Elevation maps into Tailwind's shadow-* namespace */
+  --shadow-subtle: var(--nb-shadow-subtle);
+  --shadow-raised: var(--nb-shadow-raised);
+  --shadow-overlay: var(--nb-shadow-overlay);
+
+  /* Colour maps into Tailwind's palette */
+  --color-paper: var(--nb-canvas);
+  --color-surface: var(--nb-surface);
+  --color-sunken: var(--nb-sunken);
+  --color-tinted: var(--nb-tinted);
+
+  --color-ink: var(--nb-ink);
+  --color-ink-secondary: var(--nb-ink-secondary);
+  --color-ink-tertiary: var(--nb-ink-tertiary);
+
+  --color-line: var(--nb-line);
+  --color-line-strong: var(--nb-line-strong);
+
+  --color-accent: var(--nb-accent);
+  --color-accent-hover: var(--nb-accent-hover);
+  --color-accent-fg: var(--nb-accent-fg);
+  --color-accent-soft: var(--nb-accent-soft);
+  --color-accent-border: var(--nb-accent-border);
+
+  --color-success: var(--nb-success);
+  --color-warning: var(--nb-warning);
+  --color-danger: var(--nb-danger);
+
+  /* shadcn/ui contract */
+  --color-background: var(--nb-canvas);
+  --color-foreground: var(--nb-ink);
+  --color-card: var(--nb-surface);
+  --color-card-foreground: var(--nb-ink);
+  --color-popover: var(--nb-surface);
+  --color-popover-foreground: var(--nb-ink);
+  --color-primary: var(--nb-accent);
+  --color-primary-foreground: var(--nb-accent-fg);
+  --color-secondary: var(--nb-sunken);
+  --color-secondary-foreground: var(--nb-ink);
+  --color-muted: var(--nb-sunken);
+  --color-muted-foreground: var(--nb-ink-secondary);
+  --color-accent-ui: var(--nb-elevated);
+  --color-accent-ui-foreground: var(--nb-ink);
+  --color-destructive: var(--nb-danger);
+  --color-border: var(--nb-line);
+  --color-input: var(--nb-line);
+  --color-ring: var(--nb-accent);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--nb-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--nb-canvas);
+    color: var(--nb-ink);
+    font-family: var(--nb-font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+    color: var(--nb-ink);
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    /*
+       A soft, offset accent ring rather than a hard 2px accent outline. It
+       still reads clearly for keyboard users — which is the point — without
+       the "debug outline" look a saturated ring gives a polished form.
+    */
+    outline: 2px solid var(--nb-focus-ring);
+    outline-offset: var(--nb-focus-ring-offset);
+  }
+
+  /*
+     Text selection.
+
+     The default selection is near-invisible against our surfaces — a pale
+     yellow on white, and a dark blue on AMOLED black — which makes it
+     impossible to tell how much of a long answer you just dragged over.
+     Both themes set an explicit fill and a foreground that keeps the copied
+     text readable.
+  */
+  ::selection {
+    background-color: var(--nb-selection-bg);
+    color: var(--nb-selection-fg);
+  }
+
+  /* Inputs inherit the selection treatment too, including inside Clerk. */
+  input::selection,
+  textarea::selection {
+    background-color: var(--nb-selection-bg);
+    color: var(--nb-selection-fg);
+  }
+
+  /*
+     A single motion language. Interactive elements transition colour, border,
+     background and shadow together so hover states never snap.
+  */
+  button,
+  a,
+  input,
+  textarea,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    transition:
+      color var(--nb-duration) var(--nb-ease),
+      background-color var(--nb-duration) var(--nb-ease),
+      border-color var(--nb-duration) var(--nb-ease),
+      box-shadow var(--nb-duration) var(--nb-ease),
+      opacity var(--nb-duration-fast) var(--nb-ease);
+  }
+
+  /* Opt out where a transition would fight a layout animation. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Restrained, self-hiding scrollbars for panel surfaces */
+  .scroll-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nb-line-strong) transparent;
+  }
+
+  .scroll-subtle::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scroll-subtle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-subtle::-webkit-scrollbar-thumb {
+    background-color: var(--nb-line-strong);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scroll-subtle::-webkit-scrollbar-thumb:hover {
+    background-color: var(--nb-ink-tertiary);
+    background-clip: content-box;
+  }
+}
+
+@layer utilities {
+  /* Long-form reading surface for assistant answers */
+  .prose-answer {
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--nb-ink-secondary);
+  }
+
+  .prose-answer > * + * {
+    margin-top: 0.875em;
+  }
+
+  .prose-answer h1,
+  .prose-answer h2,
+  .prose-answer h3,
+  .prose-answer h4 {
+    margin-top: 1.5em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    color: var(--nb-ink);
+  }
+
+  .prose-answer h1 {
+    font-size: 1.125rem;
+  }
+  .prose-answer h2 {
+    font-size: 1.0625rem;
+  }
+  .prose-answer h3 {
+    font-size: 1rem;
+  }
+  .prose-answer h4 {
+    font-size: 0.9375rem;
+    color: var(--nb-ink-secondary);
+  }
+
+  .prose-answer ul,
+  .prose-answer ol {
+    padding-left: 1.25em;
+  }
+
+  .prose-answer ul {
+    list-style-type: disc;
+  }
+
+  .prose-answer ol {
+    list-style-type: decimal;
+  }
+
+  .prose-answer li + li {
+    margin-top: 0.375em;
+  }
+
+  .prose-answer li::marker {
+    color: var(--nb-ink-tertiary);
+  }
+
+  .prose-answer code {
+    font-family: var(--nb-font-mono);
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: var(--nb-radius-xs);
+    background-color: var(--nb-sunken);
+    border: 1px solid var(--nb-line);
+  }
+
+  .prose-answer pre {
+    font-family: var(--nb-font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    padding: 0.875rem 1rem;
+    border-radius: var(--nb-radius-md);
+    background-color: var(--nb-sunken);
+    border: 1px solid var(--nb-line);
+    overflow-x: auto;
+  }
+
+  .prose-answer pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .prose-answer blockquote {
+    border-left: 2px solid var(--nb-accent-border);
+    padding-left: 0.875rem;
+    color: var(--nb-ink-secondary);
+    font-style: italic;
+  }
+
+  .prose-answer strong {
+    font-weight: 600;
+    color: var(--nb-ink);
+  }
+
+  .prose-answer a {
+    color: var(--nb-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .prose-answer hr {
+    border: none;
+    border-top: 1px solid var(--nb-line);
+  }
+
+  .prose-answer table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .prose-answer th,
+  .prose-answer td {
+    border: 1px solid var(--nb-line);
+    padding: 0.375rem 0.625rem;
+    text-align: left;
+  }
+
+  .prose-answer th {
+    background-color: var(--nb-sunken);
+    font-weight: 600;
+  }
+}
