@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { ChevronRightIcon, PlusIcon } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SourceItem } from "@/components/sources/SourceItem";
@@ -9,15 +9,20 @@ import type { DocumentSource } from "@/types";
 /**
  * Sources sidebar.
  *
- * Reads as workspace navigation rather than a dashboard: a plain label with a
- * count, a full-width add action, then a dense single-column list. Rendered
- * as the desktop sidebar or inside a mobile Sheet — one implementation, two
- * hosts.
+ * Collapsed by default: sources are context for the conversation, not the
+ * primary navigation, so they yield their space to the chat list above. The
+ * collapsed row keeps "Add source" reachable on the right — hiding it behind
+ * the disclosure would leave no way to add one at all.
+ *
+ * Rendered as the desktop sidebar or inside a mobile Sheet — one
+ * implementation, two hosts.
  */
 export function SourcesPanel({
   documents,
   isLoading,
   error,
+  isExpanded,
+  onToggle,
   onAdd,
   onOpenSource,
   onDeleteSource,
@@ -28,6 +33,9 @@ export function SourcesPanel({
   documents: DocumentSource[];
   isLoading: boolean;
   error: string | null;
+  /** Whether the document list is revealed. */
+  isExpanded: boolean;
+  onToggle: () => void;
   onAdd: () => void;
   onOpenSource: (document: DocumentSource) => void;
   onDeleteSource: (document: DocumentSource) => void;
@@ -36,61 +44,101 @@ export function SourcesPanel({
   headerExtra?: React.ReactNode;
 }) {
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col bg-sunken", className)}>
-      <div className="flex h-12 shrink-0 items-center gap-2 px-4">
-        <h2 className="text-[0.8125rem] font-semibold tracking-[0.01em] text-ink">
-          Sources
-        </h2>
-
-        {!isLoading && !error ? (
-          <span className="text-[0.75rem] tabular-nums text-ink-tertiary">
-            {documents.length}
-          </span>
-        ) : null}
+    <div className={cn("flex min-h-0 flex-col bg-sunken", className)}>
+      <div className="flex h-11 shrink-0 items-center gap-1 px-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isExpanded}
+          aria-controls="notebook-sources-list"
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1",
+            "transition-colors hover:bg-surface",
+            "focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:outline-none",
+          )}
+        >
+          <ChevronRightIcon
+            aria-hidden="true"
+            className={cn(
+              "size-3.5 shrink-0 text-ink-tertiary transition-transform duration-150",
+              isExpanded && "rotate-90",
+            )}
+          />
+          <h2 className="truncate text-[0.8125rem] font-semibold tracking-[0.01em] text-ink">
+            Sources
+          </h2>
+          {!isLoading && !error ? (
+            <span className="text-[0.75rem] tabular-nums text-ink-tertiary">
+              {documents.length}
+            </span>
+          ) : null}
+        </button>
 
         {headerExtra ? (
-          <div className="ml-auto flex items-center gap-1">{headerExtra}</div>
+          <div className="flex shrink-0 items-center gap-1">{headerExtra}</div>
         ) : null}
-      </div>
 
-      <div className="shrink-0 px-3 pb-2">
+        {/*
+          Add source stays in the header row whether or not the list is
+          revealed, so it never disappears behind the disclosure.
+        */}
         <button
           type="button"
           onClick={onAdd}
           className={cn(
-            "flex h-9 w-full items-center gap-2 rounded-lg border border-line bg-surface px-2.5",
-            "text-[0.8125rem] font-medium text-ink-secondary",
-            "transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent",
-            "focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25",
+            "flex h-7 shrink-0 items-center gap-1 rounded-md px-2",
+            "text-[0.75rem] font-medium text-accent",
+            "transition-colors hover:bg-accent-soft",
+            "focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:outline-none",
           )}
         >
-          <PlusIcon className="size-4 text-accent" />
+          <PlusIcon className="size-3.5" />
           Add source
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-subtle px-3 pb-4">
-        {isLoading ? (
-          <SourcesSkeleton />
-        ) : error ? (
-          <p className="px-1 py-4 text-[0.8125rem] text-danger">{error}</p>
-        ) : documents.length === 0 ? (
-          <SourcesEmptyState />
-        ) : (
-          <ul className="space-y-0.5">
-            <AnimatePresence initial={false}>
-              {documents.map((document) => (
-                <SourceItem
-                  key={document.id}
-                  document={document}
-                  onOpen={onOpenSource}
-                  onDelete={onDeleteSource}
-                  isDeleting={deletingId === document.id}
-                />
-              ))}
-            </AnimatePresence>
-          </ul>
-        )}
+      {/*
+        The 0fr -> 1fr row trick animates the collapse without a measurement
+        step. Both the property and the transition are set inline on purpose:
+        Tailwind was not generating `grid-rows-[1fr]` / `grid-rows-[0fr]` for
+        this build, so the utilities left the grid with no rows defined and
+        the list rendered clipped to zero height.
+      */}
+      <div
+        id="notebook-sources-list"
+        className="grid min-h-0 flex-1"
+        style={{
+          gridTemplateRows: isExpanded ? "1fr" : "0fr",
+          transition: "grid-template-rows 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+      >
+        {isExpanded ? (
+          <div className="min-h-0 overflow-hidden">
+            <div className="h-full overflow-y-auto overscroll-contain scroll-subtle px-3 pt-1 pb-4">
+              {isLoading ? (
+                <SourcesSkeleton />
+              ) : error ? (
+                <p className="px-1 py-4 text-[0.8125rem] text-danger">{error}</p>
+              ) : documents.length === 0 ? (
+                <SourcesEmptyState />
+              ) : (
+                <ul className="space-y-0.5">
+                  <AnimatePresence initial={false}>
+                    {documents.map((document) => (
+                      <SourceItem
+                        key={document.id}
+                        document={document}
+                        onOpen={onOpenSource}
+                        onDelete={onDeleteSource}
+                        isDeleting={deletingId === document.id}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </ul>
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

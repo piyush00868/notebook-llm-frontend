@@ -23,6 +23,7 @@ import { useNotebook } from "@/hooks/useNotebook";
 import { useChat } from "@/hooks/useChat";
 import { useChats } from "@/hooks/useChats";
 import { useSourcesPanel } from "@/hooks/useSourcesPanel";
+import { useSourcesExpanded } from "@/hooks/useSourcesExpanded";
 import { ConfirmDialog, type ConfirmRequest } from "@/components/layout/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import type { Citation, DocumentSource } from "@/types";
@@ -44,6 +45,7 @@ export default function NotebookPage() {
   const chats = useChats(validId ? notebookId : null);
   const chat = useChat(chats.activeChatId);
   const sourcesPanel = useSourcesPanel();
+  const sourcesExpanded = useSourcesExpanded();
 
   const [isAddOpen, setAddOpen] = useState(false);
   const [isMobileSourcesOpen, setMobileSourcesOpen] = useState(false);
@@ -209,6 +211,8 @@ export default function NotebookPage() {
     documents,
     isLoadingSources: isInitialLoading,
     error,
+    isSourcesExpanded: sourcesExpanded.isExpanded,
+    onToggleSources: sourcesExpanded.toggle,
     onAdd: () => setAddOpen(true),
     onOpenSource: (document: DocumentSource) => setPreview({ document }),
     onDeleteSource: handleDeleteRequest,

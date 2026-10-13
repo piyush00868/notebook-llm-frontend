@@ -116,6 +116,74 @@ export function sortSessions(
   });
 }
 
+export interface SessionGroup {
+  /** Stable key for React and for the section heading. */
+  key: ChatGroupKey;
+  label: string;
+  sessions: ChatSession[];
+}
+
+export type ChatGroupKey = "today" | "yesterday" | "week" | "earlier";
+
+const GROUP_LABEL: Record<ChatGroupKey, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  week: "Previous 7 days",
+  earlier: "Earlier",
+};
+
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Buckets conversations by how recently they were touched.
+ *
+ * `sortSessions` already puts the newest first; this only adds headings so a
+ * long history stays scannable and a chat's position is predictable rather
+ * than something the user has to re-derive from the list itself.
+ *
+ * Boundaries are computed against local midnight rather than rolling 24-hour
+ * windows, so "Today" empties at midnight the way people expect.
+ *
+ * Sessions with an unparseable timestamp fall into "Earlier" rather than
+ * disappearing, which would silently hide a conversation.
+ */
+export function groupSessions(
+  sessions: readonly ChatSession[],
+  now: number = Date.now(),
+): SessionGroup[] {
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const todayStart = startOfToday.getTime();
+  const yesterdayStart = todayStart - MS_PER_DAY;
+  const weekStart = todayStart - 7 * MS_PER_DAY;
+
+  const buckets: Record<ChatGroupKey, ChatSession[]> = {
+    today: [],
+    yesterday: [],
+    week: [],
+    earlier: [],
+  };
+
+  for (const session of sortSessions(sessions)) {
+    const at = parseTimestamp(session.updatedAt) || parseTimestamp(session.createdAt);
+    if (at >= todayStart) buckets.today.push(session);
+    else if (at >= yesterdayStart) buckets.yesterday.push(session);
+    else if (at >= weekStart) buckets.week.push(session);
+    else buckets.earlier.push(session);
+  }
+
+  const order: ChatGroupKey[] = ["today", "yesterday", "week", "earlier"];
+
+  return order
+    .filter((key) => buckets[key].length > 0)
+    .map((key) => ({
+      key,
+      label: GROUP_LABEL[key],
+      sessions: buckets[key],
+    }));
+}
+
 /**
  * Chat labels.
  *
