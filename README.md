@@ -46,6 +46,14 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_API_URL=http://localhost:4000
 ```
 
+Or copy the annotated template:
+
+```bash
+cp .env.example .env
+```
+
+`VITE_CLERK_PUBLISHABLE_KEY` is the one that matters — if it is missing, `main.tsx` throws `Missing VITE_CLERK_PUBLISHABLE_KEY` before anything renders.
+
 ### 3. Run
 
 ```bash
