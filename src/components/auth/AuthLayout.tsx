@@ -79,7 +79,7 @@ function ProductPanel() {
 
         <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-secondary">
           Mindora is a research companion. Gather what you are reading, then
-          talk to it — grounded, cited, and available whenever you need it
+          talk to it grounded, cited, and available whenever you need it
           again.
         </p>
 
