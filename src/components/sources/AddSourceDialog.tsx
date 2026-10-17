@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { YouTubeConnect } from "@/components/sources/YouTubeConnect";
 import { ErrorState } from "@/components/layout/ErrorState";
 import {
   SOURCE_KINDS,
@@ -394,6 +395,7 @@ function UrlField({
           ? "The video transcript is extracted and indexed."
           : "Readable article text is extracted from the page."}
       </p>
+      {kind === "youtube" ? <YouTubeConnect className="pt-1" /> : null}
     </div>
   );
 }
