@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 // lucide-react v1.52 no longer ships brand marks, so there is no Google or
-// YouTube glyph to use. ExternalLinkIcon stands in and is honest about
-// what the control does: it leaves the app.
+// YouTube glyph to use. ExternalLinkIcon stands in and is honest about what
+// the control does: it leaves the app.
 import { ExternalLinkIcon } from "lucide-react";
 import { useApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
  * Reading a transcript through the official Data API needs the user's own
  * OAuth token -- `captions.download` rejects API keys outright. Without a
  * connection the backend falls back to scraping, which YouTube blocks from
- * datacentre IPs, so this is what makes YouTube ingestion reliable in
- * production rather than a coin flip.
+ * datacentre IPs, so this is what makes YouTube ingestion reliable rather
+ * than a coin flip.
  *
- * The link points at the API's start route; the whole handshake happens on the
- * backend and returns the browser to the workspace page.
+ * The handshake is driven by the backend, which returns a consent URL that the
+ * browser then navigates to.
  */
 export function YouTubeConnect({ className }: { className?: string }) {
   const api = useApi();
@@ -48,6 +48,18 @@ export function YouTubeConnect({ className }: { className?: string }) {
       active = false;
     };
   }, [api]);
+
+  async function connect() {
+    setBusy(true);
+    try {
+      // Fetched with the auth header, then navigated to. A plain link would
+      // arrive at the API with neither a header nor a session cookie.
+      const { url } = await api.startYouTubeAuth();
+      window.location.href = url;
+    } catch {
+      setBusy(false);
+    }
+  }
 
   async function disconnect() {
     setBusy(true);
@@ -100,21 +112,22 @@ export function YouTubeConnect({ className }: { className?: string }) {
     );
   }
 
-  const href = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/auth/youtube`;
-
   return (
-    <a
-      href={href}
+    <button
+      type="button"
+      onClick={connect}
+      disabled={busy}
       className={cn(
         "inline-flex items-center gap-2 rounded-lg border border-line bg-surface",
         "px-2.5 py-1.5 text-[0.8125rem] font-medium text-ink-secondary",
         "transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent",
         "focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25",
+        "disabled:pointer-events-none disabled:opacity-60",
         className,
       )}
     >
       <ExternalLinkIcon className="size-4" />
-      Connect Google for YouTube
-    </a>
+      {busy ? "Connecting…" : "Connect Google for YouTube"}
+    </button>
   );
 }

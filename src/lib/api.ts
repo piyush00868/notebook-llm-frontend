@@ -230,6 +230,16 @@ export function createApiClient(getToken: TokenGetter) {
       }),
 
     /**
+     * Starts the Google consent handshake and returns the consent URL.
+     *
+     * It returns a URL rather than redirecting to it because the API
+     * authenticates from an `Authorization` header, and the Clerk session
+     * cookie is scoped to the frontend domain. A plain `<a href>` navigation
+     * arrives with neither and the route answers 401.
+     */
+    startYouTubeAuth: () => request<{ url: string }>("/auth/youtube"),
+
+    /**
      * Whether the signed-in user has connected a Google account.
      *
      * Connecting is what makes YouTube ingestion reliable: the official
