@@ -31,8 +31,8 @@ import { fileSize, isValidHttpUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AddSourceInput } from "@/hooks/useNotebook";
 
-/** Mirrors the backend's 20 MB multer limit. */
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
+/** Mirrors the backend's 10 MB multer limit. */
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_TEXT_CHARS = 200_000;
 
 const schema = z.object({
