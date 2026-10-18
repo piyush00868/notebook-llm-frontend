@@ -1,0 +1,7 @@
+name = "mindora-youtube-transcript"
+main = "src/index.ts"
+compatibility_date = "2026-10-18"
+
+# Workers on the free plan are enough: one request per ingestion, and this
+# exists only because YouTube refuses the backend's network.
+workers_dev = true
