@@ -28,6 +28,13 @@ export default defineConfig([
     },
   },
   {
+    // Vercel serverless functions: server-side Node, not the browser bundle.
+    files: ['api/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     // Vendored-style UI primitives: keep them free of app-specific rules.
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {
