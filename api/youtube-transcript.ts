@@ -161,6 +161,10 @@ async function fetchTranscript(
         "User-Agent": client.userAgent,
         "X-YouTube-Client-Name": client.id,
         "X-YouTube-Client-Version": client.version,
+        "Accept-Language": "en-US,en;q=0.9",
+        // Recorded consent. Without it YouTube answers some callers with an
+        // interstitial before the request is even considered.
+        Cookie: "CONSENT=YES+cb.20210328-17-p0.en+FX+000; SOCS=CAI",
       },
       body: JSON.stringify({
         context: {
@@ -226,6 +230,7 @@ async function fetchTranscript(
       headers: {
         "User-Agent": client.userAgent,
         "Accept-Language": "en-US,en;q=0.9",
+        Cookie: "CONSENT=YES+cb.20210328-17-p0.en+FX+000; SOCS=CAI",
       },
     });
 
