@@ -254,7 +254,21 @@ async function fetchTranscript(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204 });
+      /*
+       * The preflight needs the same headers as a real response. Answering 204
+       * with none of them fails the request in a browser while looking
+       * perfectly fine to a server-side client, which is exactly the kind of
+       * difference that only shows up in production.
+       */
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "content-type, x-proxy-key",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Max-Age": "86400",
+        },
+      });
     }
 
     if (request.method !== "POST") {
