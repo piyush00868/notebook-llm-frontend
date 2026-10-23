@@ -345,7 +345,7 @@
   .prose-answer {
     font-size: 0.9375rem;
     line-height: 1.75;
-    color: var(--nb-ink-secondary);
+    color: var(--nb-ink);
   }
 
   .prose-answer > * + * {
@@ -395,7 +395,7 @@
   }
 
   .prose-answer li::marker {
-    color: var(--nb-ink-tertiary);
+    color: var(--nb-ink);
   }
 
   .prose-answer code {
