@@ -99,15 +99,44 @@ export function useNotebook(notebookId: number | null): NotebookState {
   // COMPLETED or FAILED here.
   const hasProcessing = documents.some(isProcessing);
 
+  // Poll only the documents that are still processing, updating their status
+  // in place instead of refetching the entire notebook. Bumping requestKey
+  // re-runs getNotebook and replaces every source, which caused the whole page
+  // to refresh while any one source was processing.
   useEffect(() => {
     if (!hasProcessing || isInitialLoading) return;
 
-    const timer = window.setInterval(() => {
-      setRequestKey((value) => value + 1);
+    const timer = window.setInterval(async () => {
+      await Promise.all(
+        documents
+          .filter(isProcessing)
+          .map(async (doc) => {
+            try {
+              const updated = await api.getDocument(doc.id);
+              setState((current) => {
+                if (!current.notebook) return current;
+                const existing = current.notebook.documents ?? [];
+                const index = existing.findIndex(
+                  (d) => d !== null && d.id === doc.id,
+                );
+                if (index === -1) return current;
+                if (existing[index]?.status === updated.status) return current;
+                const next = [...existing];
+                next[index] = updated;
+                return {
+                  ...current,
+                  notebook: { ...current.notebook, documents: next },
+                };
+              });
+            } catch {
+              // Ignore individual poll errors; the next interval retries.
+            }
+          }),
+      );
     }, PROCESSING_POLL_MS);
 
     return () => window.clearInterval(timer);
-  }, [hasProcessing, isInitialLoading]);
+  }, [hasProcessing, isInitialLoading, documents, api]);
 
   const refresh = useCallback(() => setRequestKey((value) => value + 1), []);
 
