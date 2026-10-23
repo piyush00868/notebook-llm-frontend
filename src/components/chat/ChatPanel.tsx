@@ -129,7 +129,7 @@ export function ChatPanel({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-subtle"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-subtle border-t border-line shadow-subtle"
       >
         {empty ? (
           <ChatEmptyState
@@ -269,11 +269,13 @@ function AssistantTurn({
         {isPending ? (
           <ThinkingIndicator />
         ) : (
-          <AssistantMessage
-            content={content}
-            sources={sources}
-            onCitationClick={onCitationClick}
-          />
+          <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-tinted px-4 py-2.5 text-[0.9375rem] leading-relaxed whitespace-pre-wrap text-ink">
+            <AssistantMessage
+              content={content}
+              sources={sources}
+              onCitationClick={onCitationClick}
+            />
+          </div>
         )}
 
         {sources && sources.length > 0 && !isPending ? (
