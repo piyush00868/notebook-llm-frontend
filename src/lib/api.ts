@@ -230,33 +230,6 @@ export function createApiClient(getToken: TokenGetter) {
       }),
 
     /**
-     * Starts the Google consent handshake and returns the consent URL.
-     *
-     * It returns a URL rather than redirecting to it because the API
-     * authenticates from an `Authorization` header, and the Clerk session
-     * cookie is scoped to the frontend domain. A plain `<a href>` navigation
-     * arrives with neither and the route answers 401.
-     */
-    startYouTubeAuth: () => request<{ url: string }>("/auth/youtube"),
-
-    /**
-     * Whether the signed-in user has connected a Google account.
-     *
-     * Connecting is what makes YouTube ingestion reliable: the official
-     * captions endpoint requires a user's OAuth token because Google refuses
-     * API keys for it. Without a connection the backend falls back to
-     * scraping, which YouTube blocks from datacentre IPs.
-     */
-    getYouTubeConnection: () =>
-      request<{ configured: boolean; connected: boolean }>(
-        "/auth/youtube/status",
-      ),
-
-    /** Disconnects the account by discarding the stored refresh token. */
-    disconnectYouTube: () =>
-      request<{ connected: boolean }>("/auth/youtube", { method: "DELETE" }),
-
-    /**
      * Pasted text. Ingested server-side like every other source: the route
      * normalises, chunks and embeds the text before returning, so the source
      * is reachable by retrieval as soon as it reports COMPLETED.
