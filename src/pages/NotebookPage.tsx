@@ -269,7 +269,6 @@ export default function NotebookPage() {
           sourceCount={isInitialLoading ? undefined : documents.length}
           isLoading={isInitialLoading}
           onOpenSources={() => setMobileSourcesOpen(true)}
-          onAddSource={() => setAddOpen(true)}
         />
 
         <ChatPanel
@@ -294,7 +293,7 @@ export default function NotebookPage() {
       <Sheet open={isMobileSourcesOpen} onOpenChange={setMobileSourcesOpen}>
         <SheetContent
           side="left"
-          className="w-[85vw] max-w-sm p-0 sm:max-w-sm"
+          className="w-full md:w-[85vw] md:max-w-sm p-0"
         >
           <SheetTitle className="sr-only">Sources</SheetTitle>
           <SheetDescription className="sr-only">
