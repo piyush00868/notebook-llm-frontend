@@ -1,5 +1,5 @@
 import { UserButton } from "@clerk/clerk-react";
-import { ArrowLeftIcon, PanelLeftIcon, PlusIcon } from "lucide-react";
+import { ArrowLeftIcon, PanelLeftIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { BrandLockup } from "@/components/layout/Logo";
@@ -112,15 +112,12 @@ export function NotebookTopBar({
   sourceCount,
   isLoading,
   onOpenSources,
-  onAddSource,
 }: {
   notebookName?: string;
   sourceCount?: number;
   isLoading: boolean;
   /** Mobile: opens the sources sheet. */
   onOpenSources: () => void;
-  /** Mobile: opens the add-source dialog. */
-  onAddSource: () => void;
 }) {
   return (
     <header
@@ -164,7 +161,10 @@ export function NotebookTopBar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        <div className="flex items-center gap-1.5 lg:hidden">
+        {/* Mobile: sources sheet toggle and add source are both available
+            from the sheet, so only the sheet toggle is shown here to keep
+            the bar uncluttered on narrow screens. */}
+        <div className="flex items-center gap-1 lg:hidden">
           <Button
             variant="outline"
             size="icon"
@@ -174,14 +174,6 @@ export function NotebookTopBar({
             className="size-9"
           >
             <PanelLeftIcon />
-          </Button>
-          <Button
-            size="icon"
-            onClick={onAddSource}
-            aria-label="Add source"
-            className="size-9"
-          >
-            <PlusIcon />
           </Button>
         </div>
 
