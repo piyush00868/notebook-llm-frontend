@@ -42,9 +42,11 @@ npm install
 Create a `.env` file in this directory:
 
 ```bash
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-VITE_API_URL=http://localhost:4000
+VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
+VITE_API_URL=https://mindora-backend-tz9h.onrender.com
 ```
+
+Use production Clerk keys (`pk_live_…`); development keys (`pk_test_…`) are origin-restricted to localhost and will fail on a deployed domain.
 
 Or copy the annotated template:
 
@@ -83,7 +85,7 @@ Only two variables are read, both in `src/main.tsx` and `src/lib/api.ts`.
 
 | Variable | Required | Default | Used by |
 |---|---|---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | **Yes** | none | `main.tsx` — throws if absent |
+| `VITE_CLERK_PUBLISHABLE_KEY` | **Yes** | none | `main.tsx` — throws if absent. Use production key (`pk_live_…`) |
 | `VITE_API_URL` | No | `http://localhost:4000` | `api.ts` — trailing slashes stripped |
 
 Anything prefixed `VITE_` is **inlined into the bundle at build time**. Changing `VITE_API_URL` requires a rebuild, not just a restart.
