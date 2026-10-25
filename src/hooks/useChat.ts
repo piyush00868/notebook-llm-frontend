@@ -183,7 +183,6 @@ export function useChat(chatId: number | null): ChatState {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullAnswer = "";
-        let sources: any[] = [];
 
         try {
           while (true) {
@@ -215,7 +214,7 @@ export function useChat(chatId: number | null): ChatState {
                     );
                   }
                   if (parsed.sources) {
-                    sources = parsed.sources;
+                    // Sources are saved server-side; not needed client-side here.
                   }
                 } catch (e) {
                   // Ignore parse errors for partial SSE lines
