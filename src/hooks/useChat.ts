@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApi } from "@/lib/api";
+import { useAuth } from "@clerk/clerk-react";
 import { toViewMessages, rememberChatLabel } from "@/lib/chatHistory";
 import type { ChatMessage } from "@/types";
 
@@ -39,6 +40,7 @@ export interface ChatState {
  */
 export function useChat(chatId: number | null): ChatState {
   const api = useApi();
+  const { getToken } = useAuth();
 
   /**
      * `chatId` this state was loaded for. Messages are only surfaced when it
@@ -153,22 +155,82 @@ export function useChat(chatId: number | null): ChatState {
       abortRef.current = controller;
 
       try {
-        const result = await api.askChat(chatId, trimmed, controller.signal);
-
-        updateMessages(chatId, (current) =>
-          current.map((message) =>
-            message.id === assistantId
-              ? {
-                  ...message,
-                  content: result.answer,
-                  sources: result.sources ?? [],
-                }
-              : message,
-          ),
+        const token = await getToken();
+        
+        // Use fetch directly for SSE streaming
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/notebooks/${chatId}/chats/${chatId}/ask`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ question: trimmed }),
+            signal: controller.signal,
+          },
         );
 
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(errorBody || `Request failed: ${response.status}`);
+        }
+
+        if (!response.body) {
+          throw new Error("No response body");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullAnswer = "";
+        let sources: any[] = [];
+
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.slice(6);
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.done) {
+                    break;
+                  }
+                  if (parsed.error) {
+                    throw new Error(parsed.error);
+                  }
+                  if (parsed.text) {
+                    fullAnswer += parsed.text;
+                    updateMessages(chatId, (current) =>
+                      current.map((message) =>
+                        message.id === assistantId
+                          ? { ...message, content: fullAnswer }
+                          : message,
+                      ),
+                    );
+                  }
+                  if (parsed.sources) {
+                    sources = parsed.sources;
+                  }
+                } catch (e) {
+                  // Ignore parse errors for partial SSE lines
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        // Assistant's answer is saved server-side in askChatController after streaming.
+        // No client-side save needed.
+
         /*
-         * Reconcile with what was actually stored.
          *
          * The optimistic turn carries a client id, not the database one, so
          * without this the ids on screen would never match a reload. The
