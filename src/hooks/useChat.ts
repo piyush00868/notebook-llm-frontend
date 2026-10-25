@@ -159,7 +159,7 @@ export function useChat(chatId: number | null): ChatState {
         
         // Use fetch directly for SSE streaming
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/notebooks/${chatId}/chats/${chatId}/ask`,
+          `${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/notebooks/chats/${chatId}/ask`,
           {
             method: "POST",
             headers: {
