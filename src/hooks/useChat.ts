@@ -183,42 +183,55 @@ export function useChat(chatId: number | null): ChatState {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullAnswer = "";
+        let pendingSseData = "";
+        let streamFinished = false;
 
         try {
-          while (true) {
+          while (!streamFinished) {
             const { value, done } = await reader.read();
-            if (done) break;
+            if (done) {
+              pendingSseData += decoder.decode();
+              streamFinished = true;
+            } else {
+              pendingSseData += decoder.decode(value, { stream: true });
+            }
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
+            const events = pendingSseData.split("\n\n");
+            pendingSseData = events.pop() ?? "";
 
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6);
-                try {
-                  const parsed = JSON.parse(data);
-                  if (parsed.done) {
-                    break;
-                  }
-                  if (parsed.error) {
-                    throw new Error(parsed.error);
-                  }
-                  if (parsed.text) {
-                    fullAnswer += parsed.text;
-                    updateMessages(chatId, (current) =>
-                      current.map((message) =>
-                        message.id === assistantId
-                          ? { ...message, content: fullAnswer }
-                          : message,
-                      ),
-                    );
-                  }
-                  if (parsed.sources) {
-                    // Sources are saved server-side; not needed client-side here.
-                  }
-                } catch (e) {
-                  // Ignore parse errors for partial SSE lines
-                }
+            for (const event of events) {
+              const data = event
+                .split("\n")
+                .filter((line) => line.startsWith("data: "))
+                .map((line) => line.slice(6))
+                .join("\n");
+
+              if (!data) continue;
+
+              const parsed = JSON.parse(data) as {
+                text?: string;
+                done?: boolean;
+                error?: string;
+              };
+
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+
+              if (parsed.text) {
+                fullAnswer += parsed.text;
+                updateMessages(chatId, (current) =>
+                  current.map((message) =>
+                    message.id === assistantId
+                      ? { ...message, content: fullAnswer }
+                      : message,
+                  ),
+                );
+              }
+
+              if (parsed.done) {
+                streamFinished = true;
+                break;
               }
             }
           }
